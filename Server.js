@@ -6,18 +6,17 @@ const jwt = require("jsonwebtoken");
 const bodyparser=require("body-parser");
 const cors = require('cors');
 const { body, validationResult } = require('express-validator');
-
+const dotenv = require('dotenv');
+dotenv.config();
 // Initialize Express app
 const app = express();
-app.use(express.json());  // ✅ Parse JSON requests
-app.use(express.urlencoded({ extended: true }));  // ✅ Parse URL-encoded data (for FormData)
-
-
+app.use(express.json());  
+app.use(express.urlencoded({ extended: true }));  
 app.use(cors());
 app.use('/uploads', express.static('uploads'));
 
 // MongoDB connection (replace with your MongoDB URI)
-const MONGO_URI = 'mongodb+srv://gadamallasharvani06:Sharvani%4024@vishwatechnos.fhcy6.mongodb.net/SignInApplication?retryWrites=true&w=majority'; // Replace with your MongoDB URI
+const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -51,7 +50,6 @@ app.post('/SignUpScreen', async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user
@@ -87,8 +85,6 @@ app.post("/LoginUpScreen", async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
-
-    // Debugging: Log stored password
     console.log("Stored Hashed Password:", user.password);
 
     // Compare the provided password with the hashed password
@@ -98,7 +94,7 @@ app.post("/LoginUpScreen", async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ userId: user._id }, 'Vishwasri_Technos', { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.status(200).json({
       message: "Login successful",
@@ -133,7 +129,6 @@ app.post("/ForgotScreen", async (req, res) => {
   }
 });
 
-
 //EDITPROFILESCREEN
 
 const userProfileSchema = new mongoose.Schema({
@@ -145,7 +140,6 @@ const userProfileSchema = new mongoose.Schema({
   profileImage: String
 });
 
-// Create the model using the schema
 const UserProfile = mongoose.model('UserProfile', userProfileSchema);
 
 const storage = multer.diskStorage({
@@ -163,7 +157,6 @@ app.post('/api/EditProfileScreen', upload.single('profileImage'), async (req, re
 
     const profileImage = req.file ? `/uploads/${req.file.filename}` : '';
     console.log(" Received Data:", { name, email, phone, dob, address });
-    // console.log("Received data from frontend:", req.body);
 
     // Create a new profile in the database
     const newUserProfile = new UserProfile({
@@ -190,7 +183,6 @@ app.post('/api/EditProfileScreen', upload.single('profileImage'), async (req, re
 
 //PROFILESCREEN
 
-// ✅ Fix: Ensure API Returns JSON Instead of HTML
 app.get("/api/ProfileScreen", async (req, res) => {
   try {
     console.log("Fetching user profile..."); // Debugging log
@@ -250,7 +242,6 @@ app.post('/Feedback', async (req, res) => {
   }
 });
 
-
 // Notification Schema & Model
 const NotificationSchema = new mongoose.Schema({
   title: String,
@@ -300,7 +291,7 @@ const Notification = mongoose.model("Notification", NotificationSchema);
 // });
 
 
-      // 📌 API: Fetch Notifications
+      //  API: Fetch Notifications
 app.get("/Notifications", async (req, res) => {
   try {
     const notifications = await Notification.find();
@@ -310,7 +301,7 @@ app.get("/Notifications", async (req, res) => {
   }
 });
 
-// 📌 API: Mark Notifications as Read
+//  API: Mark Notifications as Read
 app.post("/Notifications/mark-read", async (req, res) => {
   try {
     await Notification.updateMany({}, { $set: { read: true } });
@@ -320,7 +311,7 @@ app.post("/Notifications/mark-read", async (req, res) => {
   }
 });
 
-// 📌 API: Add a New Notification
+// API: Add a New Notification
 app.post("/Notifications/add", async (req, res) => {
   try {
     const { title, message } = req.body;
@@ -343,7 +334,7 @@ app.listen(PORT, () => {
 
 // // UPLOADING IMAGE 
 
-// // ✅ MongoDB Schema for Member Profiles
+// //  MongoDB Schema for Member Profiles
 // const MemberSchema = new mongoose.Schema({
 //   fullName: String,
 //   profilePic: String,
@@ -351,16 +342,16 @@ app.listen(PORT, () => {
 
 // const Member = mongoose.model("Member", MemberSchema);
 
-// // ✅ API Endpoint to upload user profile image
+// //  API Endpoint to upload user profile image
 // app.post("/api/uploadMemberPic", upload.single("profilePic"), async (req, res) => {
 //   try {
 //     if (!req.file) {
 //       return res.status(400).json({ error: "No image uploaded" });
 //     }
 
-//     // ✅ Update the member profile with the new profile picture
+//     //  Update the member profile with the new profile picture
 //     const member = await Member.findOneAndUpdate(
-//       { _id: req.body.memberId }, // ✅ Find member by ID
+//       { _id: req.body.memberId }, //  Find member by ID
 //       { profilePic: `/memberImages/${req.file.filename}` }, // ✅ Store the image path
 //       { new: true }
 //     );
@@ -376,7 +367,7 @@ app.listen(PORT, () => {
 //   }
 // });
 
-// // ✅ Serve uploaded images statically
+// //  Serve uploaded images statically
 // app.use("/memberImages", express.static(uploadDirectory));
 
 
