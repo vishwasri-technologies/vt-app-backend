@@ -49,8 +49,8 @@ app.post('/SignUpScreen', async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
+      
+    // const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user
     const newUser = new User({
@@ -167,7 +167,6 @@ app.post('/api/EditProfileScreen', upload.single('profileImage'), async (req, re
       address,
       profileImage
     });
-
     // Save the profile to the database
     const savedProfile = await newUserProfile.save();
     console.log("Saved Profile:", savedProfile); 
@@ -321,6 +320,23 @@ app.post("/Notifications/add", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Error adding notification" });
   }
+});
+
+//CONTACT US
+const contactData = {
+  email: "vishwasritechnologies@vishcom.net",
+  website: "https://www.vishcom.net",
+  officeAddress: "Vishwasi Technologies, H.no: 10-72/b/vb, Flat no: T - 400/8, Technopolis, Gachibowli Complex, Dwaraka das colony, Begumpet 500016",
+  location: {
+    latitude: 17.4441147,
+    longitude: 78.4607775,
+  },
+  availability: "Mon - Sat | 9 AM - 6 PM",
+};
+
+// API endpoint to get contact and location details
+app.get('/contact-info', (req, res) => {
+  res.json(contactData);
 });
 
 
