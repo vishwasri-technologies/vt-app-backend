@@ -330,7 +330,10 @@ const contactData = {
   location: {
     latitude: 17.4441147,
     longitude: 78.4607775,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
   },
+  googleMapsLink: "https://www.google.com/maps/place/Vishwasri+Technologies+Pvt.Ltd/@17.4441147,78.4607775,17z/data=!3m1!4b1!4m6!3m5!1s0x3bcb9100083e8389:0xceb1ec1986df69c8!8m2!3d17.4441096!4d78.4633524!16s%2Fg%2F11wwpw6zvb?entry=ttu&g_ep=EgoyMDI1MDEyOS4xIKXMDSoASAFQAw%3D%3D",
   availability: "Mon - Sat | 9 AM - 6 PM",
 };
 
