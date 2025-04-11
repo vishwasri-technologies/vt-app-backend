@@ -8,12 +8,18 @@ const cors = require('cors');
 const { body, validationResult } = require('express-validator');
 const dotenv = require('dotenv');
 dotenv.config();
+const http = require("http");
+const { Server } = require("socket.io");
+const nodemailer = require("nodemailer"); 
 // Initialize Express app
 const app = express();
 app.use(express.json());  
 app.use(express.urlencoded({ extended: true }));  
 app.use(cors());
 app.use('/uploads', express.static('uploads'));
+
+const server = http.createServer(app);
+const io = new Server(server);
 
 // MongoDB connection (replace with your MongoDB URI)
 const MONGO_URI = process.env.MONGO_URI;
@@ -50,7 +56,7 @@ app.post('/SignUpScreen', async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
       
-    // const hashedPassword = await bcrypt.hash(password, 10);
+     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user
     const newUser = new User({
@@ -241,15 +247,16 @@ app.post('/Feedback', async (req, res) => {
   }
 });
 
+//=========================
 // Notification Schema & Model
-const NotificationSchema = new mongoose.Schema({
-  title: String,
-  message: String,
-  read: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
-});
+// const NotificationSchema = new mongoose.Schema({
+//   title: String,
+//   message: String,
+//   read: { type: Boolean, default: false },
+//   createdAt: { type: Date, default: Date.now },
+// });
 
-const Notification = mongoose.model("Notification", NotificationSchema);
+// const Notification = mongoose.model("Notification", NotificationSchema);
 
 // API to fetch notifications
 // app.get("/Notifications", async (req, res) => {
@@ -261,17 +268,17 @@ const Notification = mongoose.model("Notification", NotificationSchema);
 //   }
 // });
 
-// // API to add a new notification (Optional)
-// app.post("/Notifications", async (req, res) => {
-//   try {
-//     const { title, message } = req.body;
-//     const newNotification = new Notification({ title, message });
-//     await newNotification.save();
-//     res.status(201).json(newNotification);
-//   } catch (error) {
-//     res.status(500).json({ error: "Error adding notification" });
-//   }
-// });
+// API to add a new notification (Optional)
+app.post("/Notifications", async (req, res) => {
+  try {
+    const { title, message } = req.body;
+    const newNotification = new Notification({ title, message });
+    await newNotification.save();
+    res.status(201).json(newNotification);
+  } catch (error) {
+    res.status(500).json({ error: "Error adding notification" });
+  }
+});
 
 // // Seed sample notifications (Optional)
 // app.get("/Notifications", async (req, res) => {
@@ -291,6 +298,64 @@ const Notification = mongoose.model("Notification", NotificationSchema);
 
 
       //  API: Fetch Notifications
+// app.get("/Notifications", async (req, res) => {
+//   try {
+//     const notifications = await Notification.find();
+//     res.json(notifications);
+//   } catch (error) {
+//     res.status(500).json({ error: "Error fetching notifications" });
+//   }
+// });
+
+// //  API: Mark Notifications as Read
+// app.post("/Notifications/mark-read", async (req, res) => {
+//   try {
+//     await Notification.updateMany({}, { $set: { read: true } });
+//     res.json({ message: "All notifications marked as read" });
+//   } catch (error) {
+//     res.status(500).json({ error: "Error updating notifications" });
+//   }
+// });
+
+// // API: Add a New Notification
+// app.post("/Notifications/add", async (req, res) => {
+//   try {
+//     const { title, message } = req.body;
+//     const notification = new Notification({ title, message, read: false });
+//     await notification.save();
+//     res.json(notification);
+//   } catch (error) {
+//     res.status(500).json({ error: "Error adding notification" });
+//   }
+// });
+//==========================================
+
+// Notification Schema & Model
+const NotificationSchema = new mongoose.Schema({
+  title: String,
+  message: String,
+  read: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+});
+const Notification = mongoose.model("Notification", NotificationSchema);
+
+
+// ✅ User Schema
+const UserSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+});
+const usernotify = mongoose.model("usernotify", UserSchema);
+
+// ✅ Email transporter
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER, // Sender's email
+    pass: process.env.EMAIL_PASS, // Sender's app password
+  },
+});
+
+// API: Get Notifications
 app.get("/Notifications", async (req, res) => {
   try {
     const notifications = await Notification.find();
@@ -300,7 +365,7 @@ app.get("/Notifications", async (req, res) => {
   }
 });
 
-//  API: Mark Notifications as Read
+// API: Mark Notifications as Read
 app.post("/Notifications/mark-read", async (req, res) => {
   try {
     await Notification.updateMany({}, { $set: { read: true } });
@@ -310,16 +375,51 @@ app.post("/Notifications/mark-read", async (req, res) => {
   }
 });
 
-// API: Add a New Notification
+// API: Add Notification
+// ✅ API: Add Notification and Send Emails
 app.post("/Notifications/add", async (req, res) => {
   try {
     const { title, message } = req.body;
+
+    // Create and save the notification
     const notification = new Notification({ title, message, read: false });
     await notification.save();
-    res.json(notification);
+
+    // Broadcast notification via WebSocket
+    io.emit("new-notification", notification);
+    console.log("Broadcasting new notification:", notification);
+
+    // Fetch all registered users
+    const users = await usernotify.find();
+
+    // Send email notifications to all registered users
+    for (const user of users) {
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: "New Notification",
+          text: `${title}: ${message}`,
+        });
+      } catch (error) {
+        console.error(`Failed to send email to ${user.email}:`, error);
+      }
+    }
+
+    res.json({ message: "Notification added and emails sent", notification });
   } catch (error) {
     res.status(500).json({ error: "Error adding notification" });
   }
+});
+
+// WebSocket connection
+
+io.on("connection", (socket) => {
+  console.log("User connected");
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 
 //CONTACT US
