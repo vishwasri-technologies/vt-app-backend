@@ -340,7 +340,7 @@ const NotificationSchema = new mongoose.Schema({
 const Notification = mongoose.model("Notification", NotificationSchema);
 
 
-// ✅ User Schema
+// ✅  User Schema
 const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
 });
@@ -426,14 +426,14 @@ io.on("connection", (socket) => {
 const contactData = {
   email: "vishwasritechnologies@vishcom.net",
   website: "https://www.vishcom.net",
-  officeAddress: "Vishwasi Technologies, H.no: 10-72/b/vb, Flat no: T - 400/8, Technopolis, Gachibowli Complex, Dwaraka das colony, Begumpet 500016",
+  officeAddress: "Vishwasri Technologies H.no: 1-10-74/b&c  Flat no: T - 402/B,  Technopolis Galada Complex, Dwaraka das colony, Begumpet 500016",
   location: {
-    latitude: 17.4441147,
-    longitude: 78.4607775,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
+    latitude: 17.443909,
+    longitude: 78.463228,
+    latitudeDelta: 0.005,
+    longitudeDelta: 0.005,
   },
-  googleMapsLink: "https://www.google.com/maps/place/Vishwasri+Technologies+Pvt.Ltd/@17.4441147,78.4607775,17z/data=!3m1!4b1!4m6!3m5!1s0x3bcb9100083e8389:0xceb1ec1986df69c8!8m2!3d17.4441096!4d78.4633524!16s%2Fg%2F11wwpw6zvb?entry=ttu&g_ep=EgoyMDI1MDEyOS4xIKXMDSoASAFQAw%3D%3D",
+  googleMapsLink: "1-10-74/B&C FLAT NO: T-402/B, TECHNOPOLIS GALADA COMPLEX, DWARAKA DAS COLONY, BEGUMPET 500016",
   availability: "Mon - Sat | 9 AM - 6 PM",
 };
 
