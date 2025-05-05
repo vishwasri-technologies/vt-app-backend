@@ -1,6 +1,5 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const multer = require('multer');
 const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
 const bodyparser=require("body-parser");
@@ -16,8 +15,6 @@ const app = express();
 app.use(express.json());  
 app.use(express.urlencoded({ extended: true }));  
 app.use(cors());
-app.use('/uploads', express.static('uploads'));
-
 const server = http.createServer(app);
 const io = new Server(server);
 
@@ -42,8 +39,6 @@ const userSchema = new mongoose.Schema({
 
 // User Model
 const User = mongoose.model('User', userSchema);
-
-// Routes
 
 // Register user
 app.post('/SignUpScreen', async (req, res) => {
@@ -75,7 +70,6 @@ app.post('/SignUpScreen', async (req, res) => {
 });
 
 //LOGINUPSCREEN
-
 app.post("/LoginUpScreen", async (req, res) => {
   const { emailOrPhone, password } = req.body;
   try {
@@ -98,7 +92,6 @@ app.post("/LoginUpScreen", async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials." });
     }
-
     // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
@@ -143,25 +136,14 @@ const userProfileSchema = new mongoose.Schema({
   phone: String,
   dob: String,
   address: String,
-  profileImage: String
 });
 
 const UserProfile = mongoose.model('UserProfile', userProfileSchema);
 
-const storage = multer.diskStorage({
-  destination: './uploads/',
-  filename: (req, file, cb) => {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage: storage });
-
 // API Endpoint to update user profile
-app.post('/api/EditProfileScreen', upload.single('profileImage'), async (req, res) => {
+app.post('/api/EditProfileScreen',async (req, res) => {
   try {
     const { name, email, phone, dob, address } = req.body;
-
-    const profileImage = req.file ? `/uploads/${req.file.filename}` : '';
     console.log(" Received Data:", { name, email, phone, dob, address });
 
     // Create a new profile in the database
@@ -170,8 +152,7 @@ app.post('/api/EditProfileScreen', upload.single('profileImage'), async (req, re
       email,
       phone,
       dob,
-      address,
-      profileImage
+      address
     });
     // Save the profile to the database
     const savedProfile = await newUserProfile.save();
@@ -185,9 +166,7 @@ app.post('/api/EditProfileScreen', upload.single('profileImage'), async (req, re
   }
 });
 
-
 //PROFILESCREEN
-
 app.get("/api/ProfileScreen", async (req, res) => {
   try {
     console.log("Fetching user profile..."); // Debugging log
@@ -196,7 +175,7 @@ app.get("/api/ProfileScreen", async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "No users found" });
     }
-    res.json({name: user.name, email: user.email, profileImage: user.profileImage});
+    res.json({name: user.name, email: user.email});
   } catch (error) {
     console.error("Error fetching profile:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
@@ -205,7 +184,6 @@ app.get("/api/ProfileScreen", async (req, res) => {
 });
 
 app.use(express.json()); // Make sure this is added to parse JSON bodies
-
 
 //FEEDBACK
 // Define the feedback schema
@@ -247,27 +225,6 @@ app.post('/Feedback', async (req, res) => {
   }
 });
 
-//=========================
-// Notification Schema & Model
-// const NotificationSchema = new mongoose.Schema({
-//   title: String,
-//   message: String,
-//   read: { type: Boolean, default: false },
-//   createdAt: { type: Date, default: Date.now },
-// });
-
-// const Notification = mongoose.model("Notification", NotificationSchema);
-
-// API to fetch notifications
-// app.get("/Notifications", async (req, res) => {
-//   try {
-//     const notifications = await Notification.find().sort({ createdAt: -1 });
-//     res.json(notifications);
-//   } catch (error) {
-//     res.status(500).json({ error: "Error fetching notifications" });
-//   }
-// });
-
 // API to add a new notification (Optional)
 app.post("/Notifications", async (req, res) => {
   try {
@@ -279,56 +236,6 @@ app.post("/Notifications", async (req, res) => {
     res.status(500).json({ error: "Error adding notification" });
   }
 });
-
-// // Seed sample notifications (Optional)
-// app.get("/Notifications", async (req, res) => {
-//   const {title, message }=req.body;
-//   const newNotification = {
-//     _id: new Date().getTime().toString(), // Generate a fake _id for this example
-//     title,
-//     message,
-//     createdAt: new Date().toISOString(), // Current timestamp
-//     __v: 0 // Version key (for MongoDB)
-//   };
-//   // Add new notification to the array (in-memory storage, replace with database)
-//   notifications.push(newNotification);
-//   // Respond with a success message
-//   res.status(200).json({ message: "Notification added successfully" });
-// });
-
-
-      //  API: Fetch Notifications
-// app.get("/Notifications", async (req, res) => {
-//   try {
-//     const notifications = await Notification.find();
-//     res.json(notifications);
-//   } catch (error) {
-//     res.status(500).json({ error: "Error fetching notifications" });
-//   }
-// });
-
-// //  API: Mark Notifications as Read
-// app.post("/Notifications/mark-read", async (req, res) => {
-//   try {
-//     await Notification.updateMany({}, { $set: { read: true } });
-//     res.json({ message: "All notifications marked as read" });
-//   } catch (error) {
-//     res.status(500).json({ error: "Error updating notifications" });
-//   }
-// });
-
-// // API: Add a New Notification
-// app.post("/Notifications/add", async (req, res) => {
-//   try {
-//     const { title, message } = req.body;
-//     const notification = new Notification({ title, message, read: false });
-//     await notification.save();
-//     res.json(notification);
-//   } catch (error) {
-//     res.status(500).json({ error: "Error adding notification" });
-//   }
-// });
-//==========================================
 
 // Notification Schema & Model
 const NotificationSchema = new mongoose.Schema({
@@ -346,14 +253,7 @@ const UserSchema = new mongoose.Schema({
 });
 const usernotify = mongoose.model("usernotify", UserSchema);
 
-// ✅ Email transporter
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER, // Sender's email
-    pass: process.env.EMAIL_PASS, // Sender's app password
-  },
-});
+
 
 // API: Get Notifications
 app.get("/Notifications", async (req, res) => {
@@ -374,44 +274,6 @@ app.post("/Notifications/mark-read", async (req, res) => {
     res.status(500).json({ error: "Error updating notifications" });
   }
 });
-
-// API: Add Notification
-// ✅ API: Add Notification and Send Emails
-app.post("/Notifications/add", async (req, res) => {
-  try {
-    const { title, message } = req.body;
-
-    // Create and save the notification
-    const notification = new Notification({ title, message, read: false });
-    await notification.save();
-
-    // Broadcast notification via WebSocket
-    io.emit("new-notification", notification);
-    console.log("Broadcasting new notification:", notification);
-
-    // Fetch all registered users
-    const users = await usernotify.find();
-
-    // Send email notifications to all registered users
-    for (const user of users) {
-      try {
-        await transporter.sendMail({
-          from: process.env.EMAIL_USER,
-          to: user.email,
-          subject: "New Notification",
-          text: `${title}: ${message}`,
-        });
-      } catch (error) {
-        console.error(`Failed to send email to ${user.email}:`, error);
-      }
-    }
-
-    res.json({ message: "Notification added and emails sent", notification });
-  } catch (error) {
-    res.status(500).json({ error: "Error adding notification" });
-  }
-});
-
 // WebSocket connection
 
 io.on("connection", (socket) => {
@@ -448,50 +310,6 @@ const PORT = 5000; // Replace with your preferred port
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-
-
-// // UPLOADING IMAGE 
-
-// //  MongoDB Schema for Member Profiles
-// const MemberSchema = new mongoose.Schema({
-//   fullName: String,
-//   profilePic: String,
-// });
-
-// const Member = mongoose.model("Member", MemberSchema);
-
-// //  API Endpoint to upload user profile image
-// app.post("/api/uploadMemberPic", upload.single("profilePic"), async (req, res) => {
-//   try {
-//     if (!req.file) {
-//       return res.status(400).json({ error: "No image uploaded" });
-//     }
-
-//     //  Update the member profile with the new profile picture
-//     const member = await Member.findOneAndUpdate(
-//       { _id: req.body.memberId }, //  Find member by ID
-//       { profilePic: `/memberImages/${req.file.filename}` }, // ✅ Store the image path
-//       { new: true }
-//     );
-
-//     if (!member) {
-//       return res.status(404).json({ error: "Member not found" });
-//     }
-
-//     res.json({ message: "Profile picture updated successfully", profilePic: member.profilePic });
-//   } catch (error) {
-//     console.error("Upload Error:", error);
-//     res.status(500).json({ error: "Failed to upload profile picture" });
-//   }
-// });
-
-// //  Serve uploaded images statically
-// app.use("/memberImages", express.static(uploadDirectory));
-
-
-
-
 
 //   try {
 //     await Notification.insertMany([
